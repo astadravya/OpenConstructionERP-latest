@@ -17,6 +17,7 @@
  * its own loading / error states.
  */
 
+import { BRAND, brandWebsiteLabel } from '@/config/brand';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -308,7 +309,7 @@ export function SharePage() {
         </div>
 
         <p className="mt-4 text-center text-2xs text-content-quaternary">
-          OpenConstructionERP · datadrivenconstruction.io
+          {BRAND.name}{BRAND.website ? ` · ${brandWebsiteLabel()}` : ''}
         </p>
       </div>
     </div>

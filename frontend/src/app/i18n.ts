@@ -1,5 +1,6 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
+import { brandText } from '@/config/brand';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { useTranslation as useI18nTranslation } from 'react-i18next';
@@ -568,7 +569,11 @@ applyDocumentDirection(initialLanguage);
 
 i18n
   .use(initReactI18next)
+  // Swap upstream product / company names for this deployment's brand in
+  // every translated string (and every defaultValue). See config/brand.ts.
+  .use({ type: 'postProcessor', name: 'brand', process: (value: string) => brandText(value) })
   .init({
+    postProcess: ['brand'],
     // Initialize synchronously: every resource this init needs is already in
     // memory (the bundled EN object), so deferring init to a timer only opens
     // a boot window where ``t()`` echoes raw keys. With sync init the store

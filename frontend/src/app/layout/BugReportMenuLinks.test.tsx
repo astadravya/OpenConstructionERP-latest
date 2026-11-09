@@ -36,6 +36,11 @@ vi.mock('@/shared/lib/errorLogger', async (importOriginal) => {
 });
 
 import { BugReportMenu } from './Header';
+import { useUpstreamBrand } from '@/test/upstreamBrand';
+
+// These tests cover the upstream widgets and support channels, which a
+// white-label build hides until configured in config/brand.ts.
+useUpstreamBrand();
 
 const REAL_DESCRIPTION =
   'I clicked Install on the UK JCT pack on the modules page and nothing happened.';
@@ -67,7 +72,7 @@ describe('bug menu channels', () => {
 
     expect(openLink).toHaveBeenCalledTimes(1);
     const url = openLink.mock.calls[0]![0] as string;
-    expect(url.startsWith('mailto:info@datadrivenconstruction.io?subject=')).toBe(true);
+    expect(url.startsWith('mailto:support@example.com?subject=')).toBe(true);
     expect(decodeURIComponent(url)).toContain(REAL_DESCRIPTION);
   });
 
@@ -76,7 +81,7 @@ describe('bug menu channels', () => {
     fireEvent.click(channel('Web feedback form'));
 
     expect(openLink).toHaveBeenCalledWith(
-      expect.stringMatching(/^https:\/\/openconstructionerp\.com\/contact\.html\?report=true/),
+      expect.stringMatching(/^https:\/\/example\.com\/\?report=true/),
     );
   });
 

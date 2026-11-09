@@ -16,12 +16,16 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-_LOGO_URL = "https://openconstructionerp.com/logo-128.png"
+from app.core.branding import BRAND
+
+# Set OE_BRAND_NAME / OE_BRAND_LOGO_URL in backend/.env to rebrand (see
+# app/core/branding.py). Empty logo URL = no logo image, name only.
+_LOGO_URL = BRAND.email_logo_url
 
 #: The product name every outgoing email carries: the ``From:`` display name,
 #: the line beside the logo and the closing line of the footer. It is a brand,
 #: so it is never translated or shortened, in any language.
-BRAND_NAME = "OpenConstructionERP"
+BRAND_NAME = BRAND.name
 _APP_NAME = BRAND_NAME
 
 # The footer line of mail that a person receives because they subscribed to
@@ -81,10 +85,14 @@ def wrap(
 def brand_header() -> str:
     """The logo and the brand name that open every email, as an HTML fragment."""
     return (
-        f"<p style='margin:0 0 12px;'>"
-        f'<img src="{_LOGO_URL}" alt="{_APP_NAME}" width="40" height="40" '
-        f'style="vertical-align:middle; margin-right:8px;"/>'
-        f"<strong style='vertical-align:middle; font-size:15px;'>{_APP_NAME}</strong></p>"
+        "<p style='margin:0 0 12px;'>"
+        + (
+            f'<img src="{_LOGO_URL}" alt="{_APP_NAME}" width="40" height="40" '
+            f'style="vertical-align:middle; margin-right:8px;"/>'
+            if _LOGO_URL
+            else ""
+        )
+        + f"<strong style='vertical-align:middle; font-size:15px;'>{_APP_NAME}</strong></p>"
     )
 
 
@@ -172,7 +180,7 @@ def template_password_reset(
     to copy-paste or forwarded-email attack paths.
     """
     greeting = f"Hi {recipient_name}," if recipient_name else "Hello,"
-    subject = "Reset your OpenConstructionERP password"
+    subject = f"Reset your {_APP_NAME} password"
     body = (
         f"<p>{greeting}</p>"
         f"<p>We received a request to reset the password on your "

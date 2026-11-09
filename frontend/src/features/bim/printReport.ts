@@ -8,6 +8,7 @@
  * tables without the app chrome. Keeping the HTML builder pure (no DOM) makes
  * it unit-testable and keeps the escaping in one audited place.
  */
+import { BRAND } from '@/config/brand';
 import { QUANTITY_FIELDS, type QuantitySummary } from './boqSummary';
 import { toDisplayQuantity, displayUnitFor } from '@/shared/lib/unitConversion';
 import { getIntlLocale } from '@/shared/lib/formatters';
@@ -117,7 +118,7 @@ export function buildReportHtml(params: BuildReportHtmlParams): string {
   <h1>${escapeHtml(params.title)}</h1>
   <p class="meta">${escapeHtml(params.scopeLabel)} &middot; ${escapeHtml(params.generatedOn)}</p>
   ${body}
-  <p class="brand">OpenConstructionERP</p>
+  <p class="brand">${escapeHtml(BRAND.name)}</p>
 </body>
 </html>`;
 }

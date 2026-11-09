@@ -1,5 +1,6 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
+import { BRAND, brandGithubRepo, brandMailto } from '@/config/brand';
 import { useState, useRef, useEffect, useCallback, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useLocation, useMatch } from 'react-router-dom';
@@ -593,7 +594,7 @@ export function Header({ title, onMenuClick }: HeaderProps) {
             width, because it is the way back to a feature that stopped. */}
         <ProcessesButton />
         <NotificationBell />
-        <HeaderNewsButton />
+        {BRAND.showUpstreamCommunity && <HeaderNewsButton />}
         {/* Building a module is something you do from wherever you noticed the
             platform was missing one, so it lives here rather than in the
             sidebar. Renders nothing for anyone who may not install one.
@@ -602,8 +603,12 @@ export function Header({ title, onMenuClick }: HeaderProps) {
             had no room for these three next to the project picker, and the
             right cluster ran off screen. */}
         <div className="hidden 2xl:block"><ModuleBuilderButton /></div>
-        <div className="hidden 2xl:block"><SupportUsButton /></div>
-        <div className="hidden 2xl:block"><SubscribeButton /></div>
+        {BRAND.showUpstreamCommunity && (
+          <>
+            <div className="hidden 2xl:block"><SupportUsButton /></div>
+            <div className="hidden 2xl:block"><SubscribeButton /></div>
+          </>
+        )}
         <BugReportMenu />
         <HelpMenu />
 
@@ -694,7 +699,7 @@ export const MIN_DESCRIPTION_LENGTH = 20;
 
 /** File name for the session error log both menus offer for download. */
 function errorLogFilename(): string {
-  return `openconstructionerp-log-${new Date().toISOString().slice(0, 10)}.json`;
+  return `app-log-${new Date().toISOString().slice(0, 10)}.json`;
 }
 
 export function BugReportMenu() {
@@ -790,16 +795,15 @@ export function BugReportMenu() {
     setOpen(false);
     setDescription('');
     const { body, title } = buildBugReportUrl(trimmedDescription);
-    const subject = `OpenConstructionERP Issue - ${title}`;
+    const subject = `${BRAND.shortName} Issue - ${title}`;
     // mailto bodies are also length-limited (~2000 chars in Chrome),
     // so we trim aggressively. The downloaded log JSON is the long form.
     const safeBody = body.length > 1500 ? `${body.slice(0, 1500)}\n\n_[truncated - attach the JSON log if needed]_` : body;
     // Through openLink, not `window.location.href`: the desktop webview does
     // not hand a navigation to mailto: to the mail client, so assigning it
     // there did nothing at all. openLink sends it to the OS opener instead.
-    openLink(
-      `mailto:info@datadrivenconstruction.io?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(safeBody)}`,
-    );
+    const href = brandMailto(subject, safeBody);
+    if (href) openLink(href);
   };
 
   const handleFeedbackForm = () => {
@@ -812,7 +816,7 @@ export function BugReportMenu() {
       app_version: APP_VERSION,
       platform: navigator.userAgent.includes('Win') ? 'Windows' : navigator.userAgent.includes('Mac') ? 'macOS' : 'Linux',
     });
-    openLink(`https://openconstructionerp.com/contact.html?${params}`);
+    if (BRAND.website) openLink(`${BRAND.website.replace(/\/$/, '')}/?${params}`);
   };
 
   const handleDownloadLog = () => {
@@ -841,7 +845,7 @@ export function BugReportMenu() {
     requiresDescription: boolean;
   };
 
-  const channels: Channel[] = [
+  const allChannels: Channel[] = [
     {
       icon: Github,
       iconColor: 'text-content-primary',
@@ -878,6 +882,14 @@ export function BugReportMenu() {
       requiresDescription: false,
     },
   ];
+  // White-label build: only offer channels that lead somewhere this
+  // organization controls (its repo, its support email, its website).
+  const channels = allChannels.filter((c) =>
+    c.onClick === handleGithub ? Boolean(GITHUB_REPO)
+      : c.onClick === handleEmail ? Boolean(BRAND.email)
+        : c.onClick === handleFeedbackForm ? Boolean(BRAND.website)
+          : true,
+  );
 
   return (
     <div className="relative hidden sm:block" ref={ref}>
@@ -1104,7 +1116,9 @@ function HelpMenu() {
       feedback: 'true',
       app_version: APP_VERSION,
     });
-    openLink(`https://openconstructionerp.com/contact.html?${params}`);
+    const mail = brandMailto(`${BRAND.shortName} feedback`, `App version: ${APP_VERSION}\n\n`);
+    if (mail) openLink(mail);
+    else if (BRAND.website) openLink(`${BRAND.website.replace(/\/$/, '')}/?${params}`);
   };
 
   return (
@@ -1148,9 +1162,10 @@ function HelpMenu() {
 
           {/* External resources. Documentation points at the official docs
               site so users land on the maintained guides, not the raw repo. */}
+          {BRAND.docsUrl && (
           <a
             role="menuitem"
-            href="https://openconstructionerp.com/docs"
+            href={BRAND.docsUrl}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => setOpen(false)}
@@ -1160,16 +1175,17 @@ function HelpMenu() {
             <span className="flex-1">{t('nav.docs', { defaultValue: 'Documentation' })}</span>
             <ExternalLink size={11} className="text-content-quaternary shrink-0" />
           </a>
+          )}
           <a
             role="menuitem"
-            href="https://github.com/datadrivenconstruction/OpenConstructionERP"
+            href={BRAND.sourceCodeUrl}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => setOpen(false)}
             className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-content-primary hover:bg-surface-secondary transition-colors"
           >
             <Github size={14} className="text-content-tertiary shrink-0" />
-            <span className="flex-1">{t('nav.github', { defaultValue: 'GitHub repository' })}</span>
+            <span className="flex-1">{t('brand.source_code', { defaultValue: 'Source code' })}</span>
             <ExternalLink size={11} className="text-content-quaternary shrink-0" />
           </a>
 
@@ -1207,6 +1223,7 @@ function HelpMenu() {
           <div className="my-1 border-t border-border-light" role="separator" />
 
           {/* Feedback / report flows */}
+          {(BRAND.email || BRAND.website) && (
           <button
             type="button"
             role="menuitem"
@@ -1216,20 +1233,23 @@ function HelpMenu() {
             <MessageSquarePlus size={14} className="text-content-tertiary shrink-0" />
             <span>{t('feedback.title', { defaultValue: 'Send feedback' })}</span>
           </button>
+          )}
           {/* Bug-reporting lives in the dedicated Bug menu (the bug-icon button
               next to this one), which already offers a pre-filled GitHub issue,
               the web form, an email channel and a log download. Keeping those
               flows out of here leaves Help for docs and general feedback and
               gives bug reporting a single, obvious home. */}
+          {BRAND.email && (
           <a
             role="menuitem"
-            href="mailto:info@datadrivenconstruction.io?subject=OpenConstructionERP%20Issue%20Report"
+            href={brandMailto(`${BRAND.shortName} Issue Report`)}
             onClick={() => setOpen(false)}
             className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-content-primary hover:bg-surface-secondary transition-colors"
           >
             <Mail size={14} className="text-content-tertiary shrink-0" />
             <span>{t('header.email_issues', { defaultValue: 'Email the team' })}</span>
           </a>
+          )}
         </div>
       )}
     </div>
@@ -1317,7 +1337,7 @@ function LanguageSwitcher({
 /* ── User Menu ─────────────────────────────────────────────────────────── */
 
 /** GitHub repo slug for "Report a bug". Empty string = clipboard fallback. */
-const GITHUB_REPO = 'datadrivenconstruction/OpenConstructionERP';
+const GITHUB_REPO = brandGithubRepo();
 /** Hard ceiling for the GitHub issue body inside a URL. ~8KB is safe across browsers. */
 const MAX_BODY_BYTES = 7800;
 

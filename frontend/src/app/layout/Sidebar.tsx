@@ -85,6 +85,7 @@ import { suggestMenuChanges } from './menuUsage';
 import { NavItemBadge } from './NavItemBadge';
 import { MenuModeBar, MenuSuggestionCard, RailFlyoutGroup } from './MenuModeBar';
 import { MenuOrganizer } from './MenuOrganizer';
+import { BRAND } from '@/config/brand';
 import { chordForRoute, chordKey, chordRoutes, gChordPref } from '@/shared/lib/gChords';
 
 // The picker carries the curated icon catalogue; both load on first use.
@@ -1381,7 +1382,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
         {/* Brand block — white-labellable. When the user has set a
             custom logo or company name (via the pencil-on-hover edit
             affordance), this renders their brand large with a small
-            "powered by OpenConstructionERP" attribution beneath. */}
+            attribution beneath. Defaults come from config/brand.ts. */}
         <CustomBranding iconified={iconified} />
         {!iconified && onClose && (
           <button
@@ -1964,6 +1965,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
              on purpose: contributors who want to build a module
              themselves use the guide; users who want us to build it
              for them use this dialog. */}
+        {BRAND.showUpstreamCommunity && (
         <div className={clsx('pt-1 pb-3', iconified ? 'px-0 flex justify-center' : 'px-3')}>
           <button
             type="button"
@@ -2002,6 +2004,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
             )}
           </button>
         </div>
+        )}
       </nav>
 
       {/* Admin / setup surfaces — rendered as a 2-column button grid
@@ -2071,13 +2074,15 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
             too wide, so the same notice shows as one icon with a dot that
             opens About. `mt-3` breathes it away from the admin grid buttons
             above. */}
-        {iconified ? (
+        {/* Upstream release notices are hidden in a white-label build:
+            updating means merging upstream into this fork, not pip. */}
+        {BRAND.showUpstreamCommunity && (iconified ? (
           <UpdateBadge />
         ) : (
           <div className="mt-3">
             <UpdateNotification />
           </div>
-        )}
+        ))}
 
         {/* Version + AGPL + GitHub link
             Layout: GitHub icon (left) · version · AGPL link.
@@ -2088,9 +2093,9 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
           // Icon-only footer: GitHub + Telegram stacked. The expand
           // toggle lives on the floating edge-pill, not down here, so
           // users see only one toggle entry-point — no duplicate UI.
-          (!footerPrefs.github || !footerPrefs.community) && (
+          ((!BRAND.showUpstreamCommunity || footerPrefs.github ? false : true) || (!BRAND.showUpstreamCommunity || footerPrefs.community ? false : true)) && (
           <div className="pt-2 pb-1 flex flex-col items-center gap-1">
-            {!footerPrefs.github && (
+            {(!BRAND.showUpstreamCommunity || footerPrefs.github ? false : true) && (
               <a
                 href="https://github.com/datadrivenconstruction/OpenConstructionERP"
                 target="_blank"
@@ -2102,7 +2107,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
                 <Github size={13} strokeWidth={1.75} className="text-content-secondary" />
               </a>
             )}
-            {!footerPrefs.community && (
+            {(!BRAND.showUpstreamCommunity || footerPrefs.community ? false : true) && (
               <a
                 href="https://t.me/datadrivenconstruction"
                 target="_blank"
@@ -2129,9 +2134,9 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
           // siblings of the admin grid in the layout coordinate space:
           // same outer `px-2`, same `gap-1` between the two cards.
           <div className="pb-2 pt-1 flex flex-col gap-1.5">
-            {(!footerPrefs.github || !footerPrefs.community) && (
+            {((!BRAND.showUpstreamCommunity || footerPrefs.github ? false : true) || (!BRAND.showUpstreamCommunity || footerPrefs.community ? false : true)) && (
               <div className="grid grid-cols-2 gap-1">
-                {!footerPrefs.github && (
+                {(!BRAND.showUpstreamCommunity || footerPrefs.github ? false : true) && (
                   <a
                     href="https://github.com/datadrivenconstruction/OpenConstructionERP"
                     target="_blank"
@@ -2150,7 +2155,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
                     </span>
                   </a>
                 )}
-                {!footerPrefs.community && (
+                {(!BRAND.showUpstreamCommunity || footerPrefs.community ? false : true) && (
                   <a
                     href="https://t.me/datadrivenconstruction"
                     target="_blank"

@@ -24,6 +24,7 @@
  * never shows controls that would post nowhere.
  */
 
+import { BRAND } from '@/config/brand';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -438,7 +439,8 @@ export function SettingsTeamPanel() {
             </div>
           </dl>
 
-          {/* Commercial upgrade path - honest, no in-app payment flow */}
+          {/* Commercial upgrade path (upstream's licence sales): hidden in a white-label build. */}
+          {BRAND.showUpstreamCommunity && (
           <div className="mt-4 rounded-lg border border-oe-blue/20 bg-oe-blue/[0.04] px-4 py-3.5">
             <div className="flex items-start gap-3">
               <Lock size={16} className="mt-0.5 shrink-0 text-oe-blue" />
@@ -464,6 +466,7 @@ export function SettingsTeamPanel() {
               </div>
             </div>
           </div>
+          )}
         </CardContent>
       </Card>
     </div>

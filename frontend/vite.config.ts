@@ -14,6 +14,52 @@ import { cpSync, existsSync, readFileSync, readdirSync, createReadStream, statSy
 import type { Plugin } from 'vite';
 import { STATIC_ASSETS_CACHE, isStaticAssetRequest } from './src/pwa/staticAssetRoute';
 import { LOCALE_KEYS_CHUNK, isLocaleKeysId, localeKeyIndex } from './vite.locale-key-index';
+import { BRAND, brandInitials } from './src/config/brand';
+
+// Organization branding (src/config/brand.ts) for the parts of the app that
+// are not React: the page title, meta tags and browser-tab icon in
+// index.html, and the installable-app (PWA) icon. When no icon file is
+// configured, a monogram tile (brand initials on the primary colour) is
+// served at /brand-monogram.svg.
+const BRAND_MONOGRAM_PATH = 'brand-monogram.svg';
+function brandMonogramSvg(): string {
+  const esc = (v: string) => v.replace(/[<>&"]/g, (c) => `&#${c.charCodeAt(0)};`);
+  return (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">' +
+    `<rect width="512" height="512" rx="96" fill="${esc(BRAND.primaryColor)}"/>` +
+    '<text x="256" y="256" text-anchor="middle" dominant-baseline="central" fill="#fff" ' +
+    `font-family="system-ui, Segoe UI, Arial, sans-serif" font-size="230" font-weight="800">${esc(brandInitials())}</text>` +
+    '</svg>'
+  );
+}
+const brandIconUrl = BRAND.icon || `/${BRAND_MONOGRAM_PATH}`;
+function brandHtml(): Plugin {
+  const esc = (v: string) => v.replace(/[<>&"]/g, (c) => `&#${c.charCodeAt(0)};`);
+  return {
+    name: 'brand-html',
+    transformIndexHtml(html) {
+      return html
+        .replaceAll('__BRAND_NAME__', esc(BRAND.name))
+        .replaceAll('__BRAND_SHORT_NAME__', esc(BRAND.shortName))
+        .replaceAll('__BRAND_TAGLINE__', esc(BRAND.tagline))
+        .replaceAll('__BRAND_COLOR__', esc(BRAND.primaryColor))
+        .replaceAll('__BRAND_FAVICON__', esc(brandIconUrl));
+    },
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if ((req.url ?? '').split('?')[0] !== `/${BRAND_MONOGRAM_PATH}`) {
+          next();
+          return;
+        }
+        res.setHeader('Content-Type', 'image/svg+xml');
+        res.end(brandMonogramSvg());
+      });
+    },
+    generateBundle() {
+      this.emitFile({ type: 'asset', fileName: BRAND_MONOGRAM_PATH, source: brandMonogramSvg() });
+    },
+  };
+}
 
 const cesiumSource = path.resolve(__dirname, 'node_modules/cesium/Build/Cesium');
 const cesiumDirs = ['Workers', 'ThirdParty', 'Assets', 'Widgets'] as const;
@@ -186,6 +232,7 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
   plugins: [
+    brandHtml(),
     react(),
     process.env.ANALYZE === '1' && visualizer({
       filename: 'stats.html',
@@ -238,11 +285,11 @@ export default defineConfig({
       devOptions: { enabled: false },
       includeAssets: ['favicon.svg', 'pwa/*.svg'],
       manifest: {
-        name: 'OpenConstructionERP',
-        short_name: 'OCERP',
-        description:
-          'Open-source construction cost estimation, BIM takeoff, BOQ, tendering and field operations.',
-        theme_color: '#0284c7',
+        // From src/config/brand.ts.
+        name: BRAND.name,
+        short_name: BRAND.shortName,
+        description: BRAND.tagline,
+        theme_color: BRAND.primaryColor,
         background_color: '#f7fbff',
         display: 'standalone',
         orientation: 'any',
@@ -250,11 +297,8 @@ export default defineConfig({
         scope: '/',
         lang: 'en',
         icons: [
-          { src: '/pwa/icon-192.svg', sizes: '192x192', type: 'image/svg+xml', purpose: 'any' },
-          { src: '/pwa/icon-256.svg', sizes: '256x256', type: 'image/svg+xml', purpose: 'any' },
-          { src: '/pwa/icon-384.svg', sizes: '384x384', type: 'image/svg+xml', purpose: 'any' },
-          { src: '/pwa/icon-512.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'any' },
-          { src: '/pwa/icon-maskable-512.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'maskable' },
+          { src: brandIconUrl, sizes: 'any', purpose: 'any' },
+          { src: brandIconUrl, sizes: 'any', purpose: 'maskable' },
         ],
       },
       workbox: {

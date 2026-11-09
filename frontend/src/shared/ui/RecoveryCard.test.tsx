@@ -22,6 +22,11 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 import { RecoveryCard } from './RecoveryCard';
+import { useUpstreamBrand } from '@/test/upstreamBrand';
+
+// These tests cover the upstream widgets and support channels, which a
+// white-label build hides until configured in config/brand.ts.
+useUpstreamBrand();
 
 function renderCard(
   props: React.ComponentProps<typeof RecoveryCard>,
@@ -78,7 +83,7 @@ describe('RecoveryCard - 403 (no access)', () => {
     expect(screen.getByText(/don’t have access here/i)).toBeInTheDocument();
     const mailto = screen.getByRole('link', { name: /Request access/i });
     expect(mailto.getAttribute('href')).toBe(
-      'mailto:info@datadrivenconstruction.io?subject=Access%20request',
+      'mailto:support@example.com?subject=Access%20request',
     );
   });
 

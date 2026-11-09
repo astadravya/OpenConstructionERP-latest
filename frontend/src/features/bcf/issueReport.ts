@@ -10,6 +10,7 @@
  * audited escaper in printReport.ts.
  */
 
+import { BRAND } from '@/config/brand';
 import { escapeHtml } from '@/features/bim/printReport';
 
 import type { IssueStats } from './issueStats';
@@ -138,7 +139,7 @@ export function buildIssueReportHtml(params: IssueReportParams): string {
   <p class="meta">${escapeHtml(params.scopeLabel)} &middot; ${escapeHtml(params.generatedOn)}</p>
   ${summaryTable(params.stats, l)}
   ${issuesTable(params.rows, l)}
-  <p class="brand">OpenConstructionERP</p>
+  <p class="brand">${escapeHtml(BRAND.name)}</p>
 </body>
 </html>`;
 }

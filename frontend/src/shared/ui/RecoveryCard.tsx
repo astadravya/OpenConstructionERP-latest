@@ -17,6 +17,7 @@
  * unknown error.
  */
 
+import { BRAND, brandMailto } from '@/config/brand';
 import { useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -80,8 +81,8 @@ export function RecoveryCard({ error, onRetry, redirectTo }: RecoveryCardProps) 
             'Your role is missing the permission needed to view this. Ask a project administrator to grant you access.',
         })}
         action={
-          <a
-            href="mailto:info@datadrivenconstruction.io?subject=Access%20request"
+          BRAND.email && <a
+            href={brandMailto('Access request')}
             className="inline-flex h-10 items-center justify-center rounded-md border border-border bg-surface-primary px-4 text-sm font-medium text-content-primary hover:bg-surface-secondary transition-colors"
           >
             {t('recovery.request_access', { defaultValue: 'Request access' })}

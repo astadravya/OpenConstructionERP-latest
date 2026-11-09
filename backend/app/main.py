@@ -3310,9 +3310,15 @@ def create_app() -> FastAPI:
         complete corresponding source code of this application.
         DataDrivenConstruction · OpenConstructionERP · DDC-CWICR-OE-2026
         """
+        from app.core.branding import BRAND as _BRAND
+        from app.core.branding import UPSTREAM_SOURCE_URL
+
         return {
             "license": "AGPL-3.0",
-            "source_code": "https://github.com/datadrivenconstruction/OpenConstructionERP",
+            # The source of THIS deployment (OE_BRAND_SOURCE_CODE_URL); a
+            # modified version must offer its own source (AGPL-3.0 s.13).
+            "source_code": _BRAND.source_code_url,
+            "based_on": UPSTREAM_SOURCE_URL,
             "copyright": "Copyright (c) 2026 Artem Boiko / DataDrivenConstruction",
             "notice": (
                 "This software is licensed under AGPL-3.0. "

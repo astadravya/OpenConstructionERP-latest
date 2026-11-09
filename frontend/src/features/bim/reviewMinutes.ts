@@ -16,6 +16,7 @@
  * to the one audited escaper in printReport.ts.
  */
 
+import { BRAND } from '@/config/brand';
 import { escapeHtml } from './printReport';
 
 /** One thing that was decided about one issue during the session. */
@@ -198,7 +199,7 @@ export function buildReviewMinutesHtml(params: ReviewMinutesParams): string {
   ${metaTable(params, l)}
   ${decisionsTable(params, l)}
   ${agendaTable(params, l)}
-  <p class="brand">OpenConstructionERP</p>
+  <p class="brand">${escapeHtml(BRAND.name)}</p>
 </body>
 </html>`;
 }

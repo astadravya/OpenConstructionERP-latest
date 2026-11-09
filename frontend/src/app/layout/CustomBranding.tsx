@@ -2,22 +2,9 @@
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
 // White-label branding for the sidebar header.
 //
-// Renders the user's company logo / name when they have customised
-// the platform via the edit modal; otherwise renders the default
-// OpenConstructionERP wordmark. Clicking the brand area (or the
-// "Customise" pencil that appears on hover) opens the editor.
-//
-// Layout rules:
-//   * No customisation → full OpenConstructionERP logo+wordmark, as
-//     before (visual parity with v3.0.5).
-//   * Logo set        → user's logo fills the header width;
-//                       "OpenConstructionERP" subtitle is rendered at
-//                       roughly 1/3 of the original size beneath it
-//                       as a "powered by" attribution (required by
-//                       the AGPL-3.0 licence).
-//   * Name only       → company name in Plus Jakarta Sans 800, sized
-//                       to match the default wordmark; same small
-//                       OpenConstructionERP subtitle below.
+// Default brand (name, logo, colours) comes from src/config/brand.ts. An
+// admin can still override it per workspace (logo / company name) through
+// the edit modal; that override wins when set.
 //
 // The editor is a lightweight inline form (not WideModal) so the
 // sidebar can keep working on narrow viewports. The logo upload
@@ -32,7 +19,8 @@ import clsx from 'clsx';
 import { Pencil, Upload, Trash2, X, Building2, FileText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import { Logo } from '@/shared/ui';
+import { Logo, LogoWithText } from '@/shared/ui';
+import { BRAND } from '@/config/brand';
 import { useToastStore } from '@/stores/useToastStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useThemeStore } from '@/stores/useThemeStore';
@@ -124,15 +112,9 @@ export function CustomBranding({ iconified }: CustomBrandingProps) {
       );
     }
     return (
-      <a
-        href="https://openconstructionerp.com/?utm_source=app"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="hover:opacity-80 transition-opacity"
-        title="OpenConstructionERP"
-      >
+      <span className="inline-flex" title={BRAND.name}>
         <Logo size="sm" />
-      </a>
+      </span>
     );
   }
 
@@ -187,48 +169,11 @@ export function CustomBranding({ iconified }: CustomBrandingProps) {
                   {companyName}
                 </span>
               )}
-              {/* "by OpenConstructionERP" — minimal subordinate attribution
-                  under the user's brand. AGPL-3.0 attribution requirement
-                  is satisfied while the user's logo stays the dominant
-                  visual; font is small + muted on purpose. */}
-              <span
-                className="mt-1 block text-[8px] leading-none text-content-quaternary truncate"
-                style={{
-                  fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-                  letterSpacing: '0.03em',
-                }}
-              >
-                by{' '}
-                <span className="font-semibold tracking-tight">
-                  Open<span className="text-oe-blue/60">Construction</span>
-                  <span className="text-content-quaternary">ERP</span>
-                </span>
-              </span>
             </button>
           ) : (
-            <a
-              href="https://openconstructionerp.com/?utm_source=app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 hover:opacity-80 transition-opacity"
-              title="OpenConstructionERP"
-            >
-              {/* Compact wordmark — 13px text + smaller gap to fit
-                  the 248px sidebar minus the 32px edit button without
-                  visual crowding. Standard LogoWithText size="xs" used
-                  15px and clipped against the pencil. */}
-              <Logo size="xs" />
-              <span
-                className="text-[13px] font-medium text-content-primary whitespace-nowrap leading-none"
-                style={{
-                  fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-                  letterSpacing: '-0.02em',
-                }}
-              >
-                Open<span className="text-oe-blue">Construction</span>
-                <span className="text-content-quaternary">ERP</span>
-              </span>
-            </a>
+            <span className="flex items-center" title={BRAND.name}>
+              <LogoWithText size="xs" />
+            </span>
           )}
         </div>
 
