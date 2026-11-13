@@ -18,6 +18,7 @@
 // that shortlist - a lightweight, local (no backend) "playbook library for
 // this job".
 
+import { BRAND } from '@/config/brand';
 import {
   useCallback,
   useEffect,
@@ -944,7 +945,7 @@ function CasesList() {
       </div>
 
       {/* The article on why the cases exist, moved here from the sidebar. */}
-      <FeaturedArticle />
+      {BRAND.showUpstreamCommunity && <FeaturedArticle />}
 
       {allPlaybooks.length > 0 && (
         <>

@@ -1,5 +1,6 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
+import { BRAND } from '@/config/brand';
 import { landingPath } from '@/shared/lib/workPrefs';
 import { Suspense, lazy, useState, useCallback, useEffect, useLayoutEffect, useContext, createContext } from 'react';
 import { Routes, Route, Navigate, Outlet, useLocation, useMatch, useParams } from 'react-router-dom';
@@ -824,7 +825,9 @@ const IntegrationsPage = lazy(() =>
   import('@/features/integrations').then((m) => ({ default: m.IntegrationsPage }))
 );
 const AboutPage = lazy(() =>
-  import('@/features/about/AboutPage').then((m) => ({ default: m.AboutPage }))
+  BRAND.showUpstreamCommunity
+    ? import('@/features/about/AboutPage').then((m) => ({ default: m.AboutPage }))
+    : import('@/features/about/BrandedAboutPage').then((m) => ({ default: m.BrandedAboutPage }))
 );
 const HowItWorksPage = lazy(() => import('@/features/help/HowItWorksPage'));
 // Cases (playbooks) - cross-module, end-to-end guided scenarios. Lazy so the

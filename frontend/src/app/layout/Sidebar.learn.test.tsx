@@ -66,6 +66,11 @@ import { useModuleStore } from '@/stores/useModuleStore';
 import { useViewModeStore } from '@/stores/useViewModeStore';
 import { useSidebarCollapseStore } from '@/stores/useSidebarCollapseStore';
 import { useToastStore } from '@/stores/useToastStore';
+import { useUpstreamBrand } from '@/test/upstreamBrand';
+
+// These tests cover the upstream widgets and support channels, which a
+// white-label build hides until configured in config/brand.ts.
+useUpstreamBrand();
 
 const HIDDEN_GROUPS_KEY = 'oe_hidden_groups';
 

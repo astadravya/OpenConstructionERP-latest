@@ -24,6 +24,7 @@ import html
 import re
 from urllib.parse import SplitResult, urlsplit
 
+from app.core.branding import brand_text
 from app.core.document_catalogue import is_rtl, merge_missing
 from app.core.document_locale import normalize_document_locale, translate
 
@@ -146,7 +147,7 @@ def email_locale(language: str | None) -> str:
 
 
 def _t(locale: str | None, key: str, **params: object) -> str:
-    return translate(_TABLES, email_locale(locale), key, DEFAULT_LOCALE, **params)
+    return brand_text(translate(_TABLES, email_locale(locale), key, DEFAULT_LOCALE, **params))
 
 
 def digest_subject(locale: str | None, count: int) -> str:

@@ -8,6 +8,7 @@
 // that matter on screen: a value can be null (unavailable, with a reason) and
 // must never be drawn as 0, and each unit or currency is its own group.
 
+import { BRAND } from '@/config/brand';
 import { apiDelete, apiGet, apiPatch, apiPost } from '@/shared/lib/api';
 
 /* ── Types ─────────────────────────────────────────────────────────────── */
@@ -731,7 +732,7 @@ export async function downloadMatrixXlsx(matrix: MatrixCell[][], filename: strin
   const mod = await import('exceljs');
   const Ctor = (mod.Workbook ?? mod.default.Workbook) as typeof import('exceljs').Workbook;
   const wb = new Ctor();
-  wb.creator = 'OpenConstructionERP';
+  wb.creator = BRAND.name;
   wb.created = new Date();
   const ws = wb.addWorksheet(sheetName.slice(0, 31) || 'Sheet1');
   for (const line of matrix) {

@@ -18,6 +18,7 @@
  * About to read 35 kB of GPL, and the ones who do are not in a hurry.
  */
 
+import { BRAND } from '@/config/brand';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, ExternalLink, FileText } from 'lucide-react';
@@ -51,7 +52,8 @@ export interface LicenseTextDetail extends LicenseTextSummary {
   text: string;
 }
 
-const NOTICE_URL = 'https://github.com/datadrivenconstruction/OpenConstructionERP/blob/main/NOTICE';
+// NOTICE of the source this build was made from (config/brand.ts).
+const NOTICE_URL = `${BRAND.sourceCodeUrl.replace(/\/$/, '')}/blob/main/NOTICE`;
 
 /**
  * The bundled LGPL components and their licence texts.

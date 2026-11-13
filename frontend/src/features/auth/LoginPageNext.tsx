@@ -12,6 +12,7 @@
  *
  * Mounted at /login-next so /login stays untouched while we iterate.
  */
+import { BRAND } from '@/config/brand';
 import {
   useState,
   useRef,
@@ -569,17 +570,13 @@ export function LoginPageNext() {
 
           {/* Copyright — left-bottom, sits below the hero content. */}
           <div className="relative mt-auto pt-10 text-[11px] text-content-tertiary/80 dark:text-white/40">
-            © 2026{' '}
-            <a
-              href="https://www.linkedin.com/in/boikoartem/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-content-secondary hover:text-oe-blue transition-colors dark:text-white/70 dark:hover:text-oe-blue"
-            >
-              Artem Boiko
-            </a>{' '}
-            · OpenConstructionERP
-            · <a href="mailto:info@datadrivenconstruction.io" className="hover:text-content-secondary transition-colors">info@datadrivenconstruction.io</a>
+            © {new Date().getFullYear()} {BRAND.organization}
+            {BRAND.email && (
+              <>
+                {' · '}
+                <a href={`mailto:${BRAND.email}`} className="hover:text-content-secondary transition-colors">{BRAND.email}</a>
+              </>
+            )}
           </div>
         </div>
 
@@ -594,7 +591,7 @@ export function LoginPageNext() {
                   className="mt-2.5 text-xl font-medium tracking-[-0.02em] text-content-primary dark:text-white"
                   style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}
                 >
-                  Open<span className="text-oe-blue">Construction</span><span className="text-content-quaternary">ERP</span>
+                  {BRAND.name}
                 </span>
               </div>
 
@@ -605,7 +602,7 @@ export function LoginPageNext() {
                   className="text-[15px] font-medium tracking-[-0.02em] text-content-primary dark:text-white"
                   style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}
                 >
-                  Open<span className="text-oe-blue">Construction</span><span className="text-content-quaternary dark:text-white/50">ERP</span>
+                  {BRAND.name}
                 </span>
               </div>
 

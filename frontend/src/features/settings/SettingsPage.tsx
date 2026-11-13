@@ -1,5 +1,6 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP​‌‍⁠​‌‍⁠​‌‍⁠​‌‍⁠
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
+import { BRAND } from '@/config/brand';
 import { PackagesSettings } from '@/features/solution_packages/PackagesSettings';
 import { ConverterReleaseNotice } from '@/shared/ui/ConverterReleaseNotice';
 import { useState, useCallback, useEffect, useMemo, lazy, Suspense } from 'react';
@@ -1663,7 +1664,7 @@ export function SettingsPage() {
     <div className="space-y-5 animate-fade-in">
       {/* Update notification, one line. The sidebar carries the full card;
           both follow the same per-version dismissal. */}
-      <UpdateInlineNotice className="mb-4" />
+      {BRAND.showUpstreamCommunity && <UpdateInlineNotice className="mb-4" />}
 
       <Breadcrumb items={[{ label: t('nav.settings', 'Settings') }]} />
 

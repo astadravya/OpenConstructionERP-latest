@@ -47,6 +47,11 @@ vi.mock('@/shared/lib/desktop', async (importOriginal) => {
 });
 
 import { BugReportMenu, MIN_DESCRIPTION_LENGTH } from './Header';
+import { useUpstreamBrand } from '@/test/upstreamBrand';
+
+// These tests cover the upstream widgets and support channels, which a
+// white-label build hides until configured in config/brand.ts.
+useUpstreamBrand();
 
 /** A description a real reporter would write, comfortably over the minimum. */
 const REAL_DESCRIPTION =

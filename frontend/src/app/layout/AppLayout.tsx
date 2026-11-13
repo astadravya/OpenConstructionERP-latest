@@ -1,5 +1,6 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
+import { BRAND } from '@/config/brand';
 import { useState, useCallback, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -81,7 +82,7 @@ export function AppLayout({ title, children }: AppLayoutProps) {
     // page heading uses, so the tab also follows the active language.
     const key = resolvePageTitleKey(title);
     const translated = title ? (key ? t(key, { defaultValue: title }) : title) : null;
-    const suffix = brandName ?? 'OpenConstructionERP';
+    const suffix = brandName ?? BRAND.name;
     document.title = translated ? `${translated} | ${suffix}` : suffix;
     // i18n.language in deps so the tab re-translates on a language switch.
   }, [title, t, i18n.language, brandName]);
@@ -220,7 +221,7 @@ export function AppLayout({ title, children }: AppLayoutProps) {
           once per signed-in session (App.tsx `AppShell`), and every piece of
           state the card needs lives in useReviewPromptStore anyway, not in
           the component. */}
-      <ReviewPromptCard />
+      {BRAND.showUpstreamCommunity && <ReviewPromptCard />}
 
       {/* Global onboarding tour (ProductTour) mounts once at App.tsx
           top level — moving it out of here was the fix for

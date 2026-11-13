@@ -38,6 +38,7 @@
  * for a new link" message.
  */
 
+import { BRAND } from '@/config/brand';
 import {
   useEffect,
   useMemo,
@@ -1903,17 +1904,17 @@ function ShellWrapper({
 
       <footer className="w-full border-t border-border-light mt-10">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 text-2xs text-content-tertiary flex items-center justify-between gap-3 flex-wrap">
-          <span>
+          {BRAND.email && <span>
             {t('buyer_portal.footer.contact', {
               defaultValue: 'Questions? Email',
             })}{' '}
             <a
-              href="mailto:info@datadrivenconstruction.io"
+              href={`mailto:${BRAND.email}`}
               className="text-oe-blue hover:underline"
             >
-              info@datadrivenconstruction.io
+              {BRAND.email}
             </a>
-          </span>
+          </span>}
           <a
             href="https://www.gnu.org/licenses/agpl-3.0.html"
             target="_blank"

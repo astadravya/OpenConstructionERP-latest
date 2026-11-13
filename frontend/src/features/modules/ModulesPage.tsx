@@ -1,5 +1,6 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP​‌‍⁠​‌‍⁠​‌‍⁠​‌‍⁠
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
+import { BRAND } from '@/config/brand';
 import { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -1237,6 +1238,7 @@ function DataPackagesTab() {
               <p className="text-sm text-content-secondary leading-relaxed mb-4">
                 {t('modules.community_desc', { defaultValue: 'OpenConstructionERP has a modular plugin architecture. Anyone can create custom modules - cost databases, regional standards, CAD converters, analytics dashboards, integrations with external systems, or any other functionality.' })}
               </p>
+              {BRAND.showUpstreamCommunity && (
               <div className="flex flex-wrap gap-3">
                 <a
                   href="mailto:info@datadrivenconstruction.io?subject=OpenConstructionERP%20Module%20Proposal"
@@ -1264,6 +1266,7 @@ function DataPackagesTab() {
                   {t('modules.community_telegram', { defaultValue: 'Discuss in Telegram' })}
                 </a>
               </div>
+              )}
             </div>
           </div>
         </Card>

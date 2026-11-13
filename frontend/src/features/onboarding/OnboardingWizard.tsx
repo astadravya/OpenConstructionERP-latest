@@ -1,5 +1,6 @@
 // DDC-CWICR-OE: DataDrivenConstruction · OpenConstructionERP​‌‍⁠​‌‍⁠​‌‍⁠​‌‍⁠
 // Copyright (c) 2026 Artem Boiko / DataDrivenConstruction
+import { BRAND } from '@/config/brand';
 import { useState, useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, Link } from 'react-router-dom';
@@ -4929,7 +4930,7 @@ export function OnboardingWizard() {
   // and re-translated on a language switch in step 1.
   const brandName = useBrandingStore((s) => (s.companyName.trim() ? s.companyName.trim() : null));
   useEffect(() => {
-    document.title = `${t('onboarding.page_title', { defaultValue: 'Getting started' })} | ${brandName ?? 'OpenConstructionERP'}`;
+    document.title = `${t('onboarding.page_title', { defaultValue: 'Getting started' })} | ${brandName ?? BRAND.name}`;
   }, [t, i18nInstance.language, brandName]);
   const [restored] = useState(() => loadWizardProgress(TOTAL_STEPS));
   const [step, setStep] = useState(() => restored?.step ?? 0);

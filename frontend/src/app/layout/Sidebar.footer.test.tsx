@@ -59,6 +59,11 @@ import { useModuleStore } from '@/stores/useModuleStore';
 import { useViewModeStore } from '@/stores/useViewModeStore';
 import { useSidebarCollapseStore } from '@/stores/useSidebarCollapseStore';
 import { DEFAULT_FOOTER_PREFS, resetFooterPrefsCache, writeFooterPrefs } from '@/shared/lib/footerPrefs';
+import { useUpstreamBrand } from '@/test/upstreamBrand';
+
+// These tests cover the upstream widgets and support channels, which a
+// white-label build hides until configured in config/brand.ts.
+useUpstreamBrand();
 
 function renderSidebar() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });

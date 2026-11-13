@@ -7,6 +7,7 @@
  * and restoring from previously exported backups.
  */
 
+import { BRAND } from '@/config/brand';
 import { useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -156,7 +157,7 @@ export function BackupRestore() {
       const blob = await exportBackup();
       const now = new Date();
       const dateStr = now.toISOString().slice(0, 10);
-      const filename = `openconstructionerp-backup-${dateStr}.zip`;
+      const filename = `${BRAND.shortName.replace(/[^\w-]+/g, '-').toLowerCase()}-backup-${dateStr}.zip`;
 
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');

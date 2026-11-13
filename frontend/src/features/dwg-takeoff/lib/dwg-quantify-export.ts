@@ -12,6 +12,7 @@
  * (lazy ctor resolve + ``neutraliseFormula`` defence + blob download).
  */
 
+import { BRAND } from '@/config/brand';
 import type * as ExcelJS from 'exceljs';
 import type { LayerQuantity } from './auto-quantify';
 import { quantifyTotals, type QuantifyTotals } from './takeoff-totals';
@@ -87,7 +88,7 @@ export async function buildQuantifyWorkbook(
   const mod = await import('exceljs');
   const Ctor = (mod.Workbook ?? mod.default.Workbook) as typeof ExcelJS.Workbook;
   const wb = new Ctor();
-  wb.creator = 'OpenConstructionERP';
+  wb.creator = BRAND.name;
   wb.created = ctx.exportDate ?? new Date();
 
   // Display measurement system for this written sheet. Storage is always
