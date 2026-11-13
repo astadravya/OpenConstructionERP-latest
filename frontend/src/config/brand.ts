@@ -29,11 +29,11 @@ export interface BrandConfig {
 
 export const BRAND: Readonly<BrandConfig> = {
   /** Full product / organization name shown across the app. */
-  name: 'Your Organization ERP',
+  name: 'SatyaDeva BuildTech',
   /** Short name for tight spots (browser tab, mobile home screen, icons). */
-  shortName: 'Org ERP',
+  shortName: 'SatyaDeva',
   /** Legal name of the organization (About page, footer, documents). */
-  organization: 'Your Organization Pvt. Ltd.',
+  organization: 'SatyaDeva BuildTech',
   /** One-line tagline under the name on the login page. */
   tagline: 'Construction estimating and project management',
 
@@ -44,13 +44,13 @@ export const BRAND: Readonly<BrandConfig> = {
    *   logoDark optional variant for dark mode
    *   icon     square icon (collapsed sidebar, favicon), PNG/SVG
    */
-  logo: '',
+  logo: '/brand/satyadeva-logo.png',
   logoDark: '',
-  icon: '',
+  icon: '/brand/satyadeva-icon-192.png',
 
   /** Brand colours (hex). `primary` tints the monogram and accents. */
-  primaryColor: '#0B5394',
-  secondaryColor: '#073763',
+  primaryColor: '#15223B',
+  secondaryColor: '#D98E22',
 
   /** Contact details (About page, footer, emails). Empty = hidden. */
   website: '',

@@ -172,7 +172,7 @@ export function CustomBranding({ iconified }: CustomBrandingProps) {
             </button>
           ) : (
             <span className="flex items-center" title={BRAND.name}>
-              <LogoWithText size="xs" />
+              <LogoWithText size={BRAND.logo ? "lg" : "xs"} />
             </span>
           )}
         </div>

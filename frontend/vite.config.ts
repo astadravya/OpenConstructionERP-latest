@@ -37,13 +37,15 @@ function brandHtml(): Plugin {
   const esc = (v: string) => v.replace(/[<>&"]/g, (c) => `&#${c.charCodeAt(0)};`);
   return {
     name: 'brand-html',
-    transformIndexHtml(html) {
-      return html
+    // 'pre' so the placeholders are filled before Vite rewrites asset URLs.
+    transformIndexHtml: {
+      order: 'pre',
+      handler: (html) => html
         .replaceAll('__BRAND_NAME__', esc(BRAND.name))
         .replaceAll('__BRAND_SHORT_NAME__', esc(BRAND.shortName))
         .replaceAll('__BRAND_TAGLINE__', esc(BRAND.tagline))
         .replaceAll('__BRAND_COLOR__', esc(BRAND.primaryColor))
-        .replaceAll('__BRAND_FAVICON__', esc(brandIconUrl));
+        .replaceAll('__BRAND_FAVICON__', esc(brandIconUrl)),
     },
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
