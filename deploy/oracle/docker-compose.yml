@@ -1,0 +1,101 @@
+# SatyaDeva BuildTech demo stack for one small ARM64 server
+# (Oracle Cloud Always Free, Ampere A1, Ubuntu).
+#
+# The images are built by .github/workflows/deploy-demo.yml on a GitHub ARM
+# runner and pulled here, so the server never runs the memory-hungry frontend
+# build itself. Secrets live in .env next to this file, which bootstrap.sh
+# creates once on the server. Nothing secret is stored in the repository.
+#
+#   Browser --443--> caddy (free Let's Encrypt HTTPS)
+#                      --> frontend (nginx: React app, proxies /api)
+#                            --> backend (FastAPI) --> postgres
+
+name: opencon
+
+services:
+  postgres:
+    image: pgduckdb/pgduckdb:16-main
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: oe
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run bootstrap.sh first}
+      POSTGRES_DB: openestimate
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oe -d openestimate"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  backend:
+    image: ${IMAGE_PREFIX:-ghcr.io/astadravya/opencon}-backend:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      OE_DB_HOST: postgres
+      OE_DB_PORT: "5432"
+      OE_DB_USER: oe
+      OE_DB_NAME: openestimate
+      OE_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?run bootstrap.sh first}
+      APP_ENV: production
+      APP_DEBUG: "false"
+      LOG_LEVEL: INFO
+      ALLOWED_ORIGINS: https://${DEMO_DOMAIN:?run bootstrap.sh first}
+      OE_DATA_DIR: /data
+      # Example projects and the one-click demo logins on the sign-in page.
+      SEED_DEMO: ${SEED_DEMO:-true}
+      # true = visitors can look but not change anything (shared public demo).
+      OE_DEMO_READ_ONLY: ${OE_DEMO_READ_ONLY:-false}
+      # New sign-ups wait for an admin to approve them.
+      OE_REGISTRATION_MODE: ${OE_REGISTRATION_MODE:-admin-approve}
+      # No vector database on the free box; AI matching stays off.
+      QDRANT_URL: ""
+      OE_BRAND_NAME: ${OE_BRAND_NAME:-SatyaDeva BuildTech}
+      OE_BRAND_WEBSITE: ${OE_BRAND_WEBSITE:-}
+      OE_BRAND_SOURCE_CODE_URL: ${OE_BRAND_SOURCE_CODE_URL:-https://github.com/astadravya/OpenConstructionERP-latest}
+    volumes:
+      - app_data:/data
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  frontend:
+    image: ${IMAGE_PREFIX:-ghcr.io/astadravya/opencon}-frontend:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    expose:
+      - "80"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - frontend
+    environment:
+      DEMO_DOMAIN: ${DEMO_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  pg_data:
+  app_data:
+  caddy_data:
+  caddy_config:

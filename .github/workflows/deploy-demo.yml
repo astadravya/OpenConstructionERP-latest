@@ -1,0 +1,151 @@
+# Builds ARM64 images and deploys the demo to the Oracle Cloud server.
+#
+# Runs on every push to main, or by hand from the Actions tab ("Run workflow").
+# It does nothing until the server is set up: add these in
+# Settings > Secrets and variables > Actions (see deploy/oracle/README.md):
+#
+#   Variables:  DEMO_HOST    public IP of the VM (required)
+#               DEMO_USER    SSH user, default "ubuntu"
+#               DEMO_DOMAIN  your domain; leave unset to use <ip>.sslip.io
+#   Secret:     DEMO_SSH_KEY the VM's private SSH key (whole file contents)
+
+name: Deploy demo
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-demo
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/opencon
+
+jobs:
+  build:
+    if: vars.DEMO_HOST != ''
+    # Native ARM64 runner (free for public repositories), so the images match
+    # the Ampere VM without slow emulation.
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      # The frontend type check and Vite build need well over 8 GB; extra swap
+      # keeps the 16 GB runner from running out.
+      - name: Add swap
+        run: |
+          sudo swapoff -a || true
+          sudo fallocate -l 10G /mnt/build-swap
+          sudo chmod 600 /mnt/build-swap
+          sudo mkswap /mnt/build-swap
+          sudo swapon /mnt/build-swap
+          free -h
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/docker/Dockerfile.unified
+          target: api
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-backend:${{ github.sha }}
+            ${{ env.IMAGE_PREFIX }}-backend:latest
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,scope=backend,mode=max
+
+      - name: Build frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/docker/Dockerfile.frontend
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-frontend:${{ github.sha }}
+            ${{ env.IMAGE_PREFIX }}-frontend:latest
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,scope=frontend,mode=max
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DEMO_HOST: ${{ vars.DEMO_HOST }}
+      DEMO_USER: ${{ vars.DEMO_USER || 'ubuntu' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Work out the domain
+        run: |
+          domain="${{ vars.DEMO_DOMAIN }}"
+          if [ -z "$domain" ]; then domain="$(echo "$DEMO_HOST" | tr . -).sslip.io"; fi
+          echo "DEMO_DOMAIN=$domain" >> "$GITHUB_ENV"
+          echo "Deploying to https://$domain"
+
+      - name: Set up SSH
+        env:
+          DEMO_SSH_KEY: ${{ secrets.DEMO_SSH_KEY }}
+        run: |
+          if [ -z "$DEMO_SSH_KEY" ]; then echo "::error::Add the DEMO_SSH_KEY secret first"; exit 1; fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEMO_SSH_KEY" | tr -d '\r' > ~/.ssh/demo
+          chmod 600 ~/.ssh/demo
+          ssh-keyscan -T 15 "$DEMO_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          echo "SSH=ssh -i $HOME/.ssh/demo -o ConnectTimeout=20 $DEMO_USER@$DEMO_HOST" >> "$GITHUB_ENV"
+
+      - name: Copy stack files
+        run: |
+          $SSH 'mkdir -p ~/opencon'
+          scp -i ~/.ssh/demo deploy/oracle/docker-compose.yml deploy/oracle/Caddyfile deploy/oracle/bootstrap.sh \
+            "$DEMO_USER@$DEMO_HOST:~/opencon/"
+
+      - name: Prepare server (Docker, firewall, secrets)
+        run: $SSH "DEMO_DOMAIN='$DEMO_DOMAIN' bash ~/opencon/bootstrap.sh"
+
+      - name: Pull and start
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "$GHCR_TOKEN" | $SSH "sudo docker login ghcr.io -u '${{ github.actor }}' --password-stdin"
+          # Pin the image version in .env so a manual restart on the server
+          # uses exactly what was deployed.
+          $SSH "cd ~/opencon && sed -i '/^IMAGE_PREFIX=/d;/^IMAGE_TAG=/d' .env \
+            && printf 'IMAGE_PREFIX=%s\nIMAGE_TAG=%s\n' '$IMAGE_PREFIX' '${{ github.sha }}' >> .env \
+            && sudo docker compose pull \
+            && sudo docker compose up -d --remove-orphans \
+            && sudo docker image prune -f"
+          $SSH "sudo docker logout ghcr.io" || true
+
+      - name: Check the site answers
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS --max-time 10 "https://$DEMO_DOMAIN/api/health"; then
+              echo; echo "Live at https://$DEMO_DOMAIN"
+              echo "### Demo is live: https://$DEMO_DOMAIN" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "Waiting for the app and the HTTPS certificate ($i/30)..."; sleep 10
+          done
+          $SSH "cd ~/opencon && sudo docker compose ps && sudo docker compose logs --tail 80"
+          exit 1
