@@ -1,21 +1,24 @@
-# Builds the demo images on every push to main (or by hand) and pushes them to
-# GitHub's container registry. If a demo server happens to be running, it is
-# updated to the new images straight away; otherwise the next "Demo server >
-# start" uses them. Building here keeps the small droplet from ever running
-# the frontend build, which needs about 14 GB of memory.
+# Builds a server's images and pushes them to GitHub's container registry:
+#   push to main          -> demo images     ghcr.io/<owner>/opencon-*
+#   push to client/<name> -> client images   ghcr.io/<owner>/opencon-<name>-*
+# so a client server only changes when its own branch changes (merge main into
+# client/<name> to give that client the latest core). If the matching server
+# is running, it is updated straight away; otherwise its next start uses them.
+# Building here keeps the small droplet from ever running the frontend build,
+# which needs about 14 GB of memory.
 
-name: Build demo images
+name: Build server images
 
 on:
   push:
-    branches: [main]
+    branches: [main, "client/**"]
     paths-ignore:
       - "**.md"
       - "docs/**"
   workflow_dispatch:
 
 concurrency:
-  group: demo-build
+  group: build-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -23,7 +26,9 @@ permissions:
   packages: write
 
 env:
-  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/opencon
+  IMAGE_BASE: ghcr.io/${{ github.repository_owner }}/opencon
+  # demo for main, the client name for client/<name>
+  INSTANCE: ${{ startsWith(github.ref_name, 'client/') && github.ref_name || 'demo' }}
 
 jobs:
   build:
@@ -31,6 +36,13 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+
+      - name: Work out image names
+        run: |
+          inst="${INSTANCE#client/}"
+          echo "INSTANCE=$inst" >> "$GITHUB_ENV"
+          if [ "$inst" = demo ]; then echo "IMAGE_PREFIX=$IMAGE_BASE" >> "$GITHUB_ENV"
+          else echo "IMAGE_PREFIX=$IMAGE_BASE-$inst" >> "$GITHUB_ENV"; fi
 
       # The frontend type check and Vite build need well over 8 GB; extra
       # swap keeps the 16 GB runner from running out.
@@ -83,7 +95,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     concurrency:
-      group: demo-server
+      group: server-${{ startsWith(github.ref_name, 'client/') && github.ref_name || 'demo' }}
       cancel-in-progress: false
     permissions:
       contents: read
@@ -108,9 +120,10 @@ jobs:
         uses: digitalocean/action-doctl@v2
         with:
           token: ${{ secrets.DO_TOKEN }}
-      - name: Update the demo if it is running
+      - name: Update the server if it is running
         if: steps.setup.outputs.ready == 'true'
         run: |
+          export INSTANCE="${INSTANCE#client/}"
           mkdir -p ~/.ssh
           printf '%s\n' "$DO_SSH_KEY" | tr -d '\r' > ~/.ssh/demo
           chmod 600 ~/.ssh/demo

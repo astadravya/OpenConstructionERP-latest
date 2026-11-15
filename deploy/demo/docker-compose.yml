@@ -1,6 +1,7 @@
-# SatyaDeva BuildTech demo stack for one throwaway DigitalOcean droplet.
+# SatyaDeva BuildTech stack for one throwaway DigitalOcean droplet (the demo
+# server or one client's server).
 #
-# The images are built by .github/workflows/demo-build.yml and pulled here, so
+# The images are built by .github/workflows/server-build.yml and pulled here, so
 # the droplet never runs the memory-hungry frontend build. Docker keeps all its
 # data (database, uploads, HTTPS certificates) on a small block
 # storage volume that survives when the droplet is destroyed, and .env with the

@@ -1,4 +1,4 @@
-# Demo server on DigitalOcean (start, demo, stop)
+# Demo and client servers on DigitalOcean (start, use, stop)
 
 This folder runs the SatyaDeva BuildTech demo on a throwaway DigitalOcean
 droplet in Bengaluru (`blr1`). You start it with one click before a demo and
@@ -51,7 +51,7 @@ unless you want to start again from an empty database.
    - `DO_TOKEN`: the API token.
    - `DO_SSH_KEY`: the full contents of the private file `opencon_do`
      (open it in Notepad and copy everything, including the BEGIN and END lines).
-4. Merge the pull request (or run **Actions > Build demo images > Run workflow**)
+4. Merge the pull request (or run **Actions > Build server images > Run workflow**)
    so the app images are built once. This takes 20–30 minutes the first time.
 
 The workflow registers the SSH key with DigitalOcean and creates the volume
@@ -59,7 +59,8 @@ on its own the first time you start a demo.
 
 ## Before and after each demo
 
-- **Start:** **Actions > Demo server > Run workflow**, choose `start`, then
+- **Start:** **Actions > Start or stop a server > Run workflow**, choose the
+  server (`demo` or a client such as `bel`) and `start`, then
   **Run workflow**. In about 5–8 minutes the run summary shows the address,
   for example `https://139-59-1-2.sslip.io`. The address changes every time,
   because each new droplet gets a new IP address (see "Your own domain" below).
@@ -71,6 +72,28 @@ on its own the first time you start a demo.
 
 New code merged to `main` is built automatically, and a running demo is
 updated to it straight away.
+
+## Client servers (for example BEL)
+
+Each client gets its own branch, server and data, completely separate from
+the demo:
+
+| Server | Code comes from | Droplet | Data volume | Images |
+|---|---|---|---|---|
+| `demo` | `main` | `opencon-demo` | `opencon-data` | `opencon-backend`, `opencon-frontend` |
+| `bel` | `client/bel` | `opencon-bel` | `opencon-bel-data` | `opencon-bel-backend`, `opencon-bel-frontend` |
+
+- **Customise** on the client branch (`client/bel`). Every push to it builds
+  that client's images, and a running client server is updated to them.
+- **Versions stay pinned.** Changes on `main` never reach a client by
+  themselves. To give a client the latest core, merge `main` into its branch.
+- **Settings per client** (brand name, read-only mode, sign-up policy) live in
+  that server's `.env` on its own volume.
+- **Cost** is the same model per server: hourly while started, about $1 a month
+  for each 10 GB data volume. The hourly auto-stop covers every server.
+- **Adding a client:** create a `client/<name>` branch from `main`, add
+  `<name>` to the `server` options in `.github/workflows/server.yml` on `main`,
+  then push once to the new branch to build its images.
 
 ## Your own domain (optional, later)
 
@@ -103,7 +126,7 @@ scp -i $HOME\.ssh\opencon_do "root@<droplet-ip>:/opt/opencon/backups/*" .
 
 - **"Add the DO_TOKEN and DO_SSH_KEY secrets first":** one of the two secrets is missing.
 - **Start fails pulling images:** the images have not been built yet. Run
-  **Build demo images** once.
+  **Build server images** once (on the right branch for a client).
 - **Health check times out:** the failed run prints the container logs.
   Running `start` again is safe and reuses the same droplet.
 - **"Volume is still attached":** a stop finished moments ago. Wait a minute

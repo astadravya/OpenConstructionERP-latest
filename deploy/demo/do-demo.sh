@@ -1,22 +1,39 @@
 #!/usr/bin/env bash
-# Start, stop and redeploy the throwaway demo droplet on DigitalOcean.
-# Called by the demo-*.yml workflows, with doctl already signed in and the
+# Start, stop and redeploy a throwaway server on DigitalOcean.
+# Called by the server workflows, with doctl already signed in and the
 # private SSH key at ~/.ssh/demo.
 #
 #   do-demo.sh up         create volume (first time) + droplet, deploy, health check
 #   do-demo.sh redeploy   deploy new images only if the droplet is running
 #   do-demo.sh down       back up the database to the volume, destroy the droplet
-#   do-demo.sh autostop   run "down" if the droplet is older than MAX_HOURS
+#   do-demo.sh autostop   run "down" on every server older than MAX_HOURS
+#
+# INSTANCE picks which server: "demo" (built from main) or a client name such
+# as "bel" (built from the client/bel branch). Each instance has its own
+# droplet, its own data volume and its own images, so client data never
+# shares a database with the demo or with another client:
+#
+#   instance  droplet + tag   volume             images
+#   demo      opencon-demo    opencon-data       ghcr.io/<owner>/opencon-*
+#   bel       opencon-bel     opencon-bel-data   ghcr.io/<owner>/opencon-bel-*
 set -euo pipefail
 
+INSTANCE="${INSTANCE:-demo}"
+case "$INSTANCE" in
+  *[!a-z0-9-]*|"") echo "INSTANCE must be lower-case letters, digits or dashes" >&2; exit 2 ;;
+esac
+IMAGE_BASE="${IMAGE_BASE:?e.g. ghcr.io/owner/opencon}"
+if [ "$INSTANCE" = demo ]; then
+  NAME=opencon-demo; VOLUME_NAME=opencon-data; IMAGE_PREFIX="$IMAGE_BASE"
+else
+  NAME="opencon-$INSTANCE"; VOLUME_NAME="opencon-$INSTANCE-data"; IMAGE_PREFIX="$IMAGE_BASE-$INSTANCE"
+fi
+TAG="$NAME"
+AUTOSTOP_TAG=opencon-autostop
 REGION="${DO_REGION:-blr1}"
 SIZE="${DO_SIZE:-s-2vcpu-4gb}"
-NAME="${DROPLET_NAME:-opencon-demo}"
-TAG="${DROPLET_TAG:-opencon-demo}"
-VOLUME_NAME="${VOLUME_NAME:-opencon-data}"
 VOLUME_SIZE="${VOLUME_SIZE_GB:-10}"
 MAX_HOURS="${MAX_HOURS:-8}"
-IMAGE_PREFIX="${IMAGE_PREFIX:?}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 KEY="$HOME/.ssh/demo"
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -47,7 +64,7 @@ ensure_volume() {
   if [ -z "$VOL_ID" ]; then
     log "Creating ${VOLUME_SIZE} GB storage volume $VOLUME_NAME in $REGION (first run only)"
     VOL_ID="$(doctl compute volume create "$VOLUME_NAME" --region "$REGION" --size "${VOLUME_SIZE}GiB" \
-      --fs-type ext4 --desc "OpenCon demo data, kept between demos" --format ID --no-header)"
+      --fs-type ext4 --desc "OpenCon $NAME data, kept between runs" --format ID --no-header)"
   fi
   # A droplet destroyed moments ago may still be detaching the volume.
   for _ in $(seq 1 30); do
@@ -89,8 +106,8 @@ deploy() {
   for i in $(seq 1 40); do
     if curl -fsS --max-time 10 "https://$DOMAIN/api/health" >/dev/null 2>&1; then
       log "Live at https://$DOMAIN"
-      summary "### Demo is live: https://$DOMAIN"
-      summary "Remember to run **Demo server > stop** when you finish. It also stops by itself after $MAX_HOURS hours."
+      summary "### $NAME is live: https://$DOMAIN"
+      summary "Remember to run **Start or stop a server > stop** when you finish. It also stops by itself after $MAX_HOURS hours."
       return 0
     fi
     echo "   still starting ($i/40)"; sleep 10
@@ -107,7 +124,7 @@ cmd_up() {
     ensure_volume
     log "Creating droplet $NAME ($SIZE) in $REGION"
     doctl compute droplet create "$NAME" --region "$REGION" --size "$SIZE" --image ubuntu-24-04-x64 \
-      --ssh-keys "$FP" --volumes "$VOL_ID" --tag-name "$TAG" --wait >/dev/null
+      --ssh-keys "$FP" --volumes "$VOL_ID" --tag-names "$TAG,$AUTOSTOP_TAG" --wait >/dev/null
   else
     log "Droplet already running, redeploying onto it"
   fi
@@ -119,20 +136,14 @@ cmd_up() {
 cmd_redeploy() {
   IP="$(droplet_field PublicIPv4)"
   if [ -z "$IP" ]; then
-    log "No demo droplet running; new images will be used on the next start."
+    log "No $NAME droplet running; new images will be used on its next start."
     return 0
   fi
   wait_for_ssh
   deploy
 }
 
-cmd_down() {
-  DROPLET_ID="$(droplet_field ID)"
-  if [ -z "$DROPLET_ID" ]; then
-    log "No demo droplet running. Nothing to stop."
-    return 0
-  fi
-  IP="$(droplet_field PublicIPv4)"
+destroy_droplet() { # uses DROPLET_ID and IP
   if ssh_run true 2>/dev/null; then
     log "Backing up the database onto the volume and stopping the app cleanly"
     ssh_run 'set -e; cd /opt/opencon
@@ -145,19 +156,33 @@ cmd_down() {
   else
     log "Droplet not reachable over SSH; destroying anyway (data stays on the volume)."
   fi
-  log "Destroying droplet $DROPLET_ID (the $VOLUME_NAME volume is kept)"
+  log "Destroying droplet $DROPLET_ID (its data volume is kept)"
   doctl compute droplet delete "$DROPLET_ID" --force
-  summary "### Demo stopped. Billing for the server has ended; your data is kept on the $VOLUME_NAME volume."
 }
 
-cmd_autostop() {
-  CREATED="$(doctl compute droplet list --tag-name "$TAG" -o json | jq -r '.[0].created_at // empty')"
-  [ -z "$CREATED" ] && { log "No demo droplet running."; return 0; }
-  AGE_H=$(( ( $(date -u +%s) - $(date -u -d "$CREATED" +%s) ) / 3600 ))
-  log "Demo droplet is $AGE_H hour(s) old (limit $MAX_HOURS)"
-  if [ "$AGE_H" -ge "$MAX_HOURS" ]; then
-    cmd_down
+cmd_down() {
+  DROPLET_ID="$(droplet_field ID)"
+  if [ -z "$DROPLET_ID" ]; then
+    log "No $NAME droplet running. Nothing to stop."
+    return 0
   fi
+  IP="$(droplet_field PublicIPv4)"
+  destroy_droplet
+  summary "### $NAME stopped. Billing for the server has ended; its data is kept on the $VOLUME_NAME volume."
+}
+
+cmd_autostop() { # every server, whatever its instance
+  now="$(date -u +%s)"
+  doctl compute droplet list --tag-name "$AUTOSTOP_TAG" -o json \
+    | jq -r '.[] | [.id, .name, .created_at, ((.networks.v4 // [])[] | select(.type=="public") | .ip_address)] | @tsv' \
+    | while IFS=$'\t' read -r DROPLET_ID dname created IP; do
+        age_h=$(( (now - $(date -u -d "$created" +%s)) / 3600 ))
+        log "$dname is $age_h hour(s) old (limit $MAX_HOURS)"
+        if [ "$age_h" -ge "$MAX_HOURS" ]; then
+          destroy_droplet </dev/null
+          summary "### $dname was left running for $age_h hours and has been stopped."
+        fi
+      done
 }
 
 case "${1:-}" in
