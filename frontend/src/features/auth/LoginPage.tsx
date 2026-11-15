@@ -5,13 +5,7 @@ import { useState, useRef, useEffect, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import {
-  Eye, EyeOff, Mail, Lock, Globe, ChevronDown, X, Github, Users, ArrowUpRight, Pencil,
-  ShieldCheck, Zap, Brain, Info,
-  FileSpreadsheet, CalendarClock, TrendingUp, Boxes, Database,
-  BarChart3, Upload, FileCheck,
-  Box, Ruler, Layers,
-  PenTool, FolderOpen, ClipboardList,
-  Sun, Moon, Monitor,
+  Eye, EyeOff, Mail, Lock, Globe, ChevronDown, X, Github, Users, ArrowUpRight, Pencil, ShieldCheck, Zap, Info, FileSpreadsheet, CalendarClock, TrendingUp, Boxes, Database, BarChart3, Upload, FileCheck, Sun, Moon, Monitor,
 } from 'lucide-react';
 import { Button, Input, Logo, LogoWithText, CountryFlag } from '@/shared/ui';
 import { readRememberChoice, saveRememberChoice, useAuthStore } from '@/stores/useAuthStore';
@@ -19,10 +13,10 @@ import { useBrandingStore } from '@/stores/useBrandingStore';
 import { BrandingEditorModal } from '@/app/layout/CustomBranding';
 import { extractErrorMessageFromBody } from '@/shared/lib/api';
 import { isTauri } from '@/shared/lib/desktop';
-import { HEX_PORTRAIT_ASPECT, HEX_PORTRAIT_CLIP } from '@/shared/lib/honeycomb';
 import { APP_VERSION } from '@/shared/lib/version';
 import { loginFailureKindFromResponse } from './loginError';
 import { AuthBackground } from './AuthBackground';
+import { AuthBrandPanel } from './AuthBrandPanel';
 import {
   shouldAttemptDesktopBootstrap,
   shouldQueryFirstRun,
@@ -361,16 +355,6 @@ export function LoginPage() {
     }
   };
 
-  /* Benefits list - reserved for future hero section layout
-  const benefits = [
-    { icon: HardDrive, color: 'text-emerald-500 bg-emerald-500/10', title: t('login.benefit.local', 'Your data stays on your computer'), desc: t('login.benefit.local_desc', 'No cloud. No third-party servers. Full control.') },
-    { icon: ShieldCheck, color: 'text-blue-500 bg-blue-500/10', title: t('login.benefit.open_source', '100% open source'), desc: t('login.benefit.open_source_desc', 'Transparent code. No vendor lock-in.') },
-    { icon: Globe2, color: 'text-violet-500 bg-violet-500/10', title: t('login.benefit.standards', 'International standards'), desc: t('login.benefit.standards_desc', '120,000+ cost items across 9 cost bases worldwide.') },
-    { icon: Brain, color: 'text-amber-500 bg-amber-500/10', title: t('login.benefit.ai', 'AI-assisted estimation'), desc: t('login.benefit.ai_desc', 'Smart suggestions. You decide, AI assists.') },
-    { icon: Zap, color: 'text-rose-500 bg-rose-500/10', title: t('login.benefit.allinone', 'BOQ + 4D + 5D + Tendering'), desc: t('login.benefit.allinone_desc', 'Full workflow in one tool.') },
-    { icon: Users, color: 'text-cyan-500 bg-cyan-500/10', title: t('login.benefit.free', 'Free for everyone'), desc: t('login.benefit.free_desc', 'No fees. No limits. By estimators.') },
-  ]; */
-
   // Desktop first-run: clean centered pending state while we silently sign in
   // to the local workspace. Falls back to the form on any failure (see effect).
   if (bootstrapping) {
@@ -563,166 +547,9 @@ export function LoginPage() {
           />
         </div>
 
-        {/* Eyebrow pill */}
-        <div className="mb-5 animate-stagger-in" style={{ animationDelay: '0ms' }}>
-          <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/[0.08] dark:bg-emerald-400/[0.1] px-3.5 py-1.5">
-            <span className="relative flex h-[6px] w-[6px]">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
-              <span className="relative inline-flex rounded-full h-[6px] w-[6px] bg-emerald-500" />
-            </span>
-            <span className="text-[11px] font-medium tracking-[0.04em] text-emerald-700 dark:text-emerald-300">Open Source</span>
-          </span>
-        </div>
-
-        {/* Marketing headline - kept as h2 because the form panel below has the
-            authoritative h1 (visually hidden, always present in DOM). */}
-        <h2 className="text-[32px] xl:text-[36px] font-semibold text-content-primary leading-[1.08] tracking-[-0.025em] animate-stagger-in" style={{ animationDelay: '60ms' }}>
-          {t('login.hero_h_a', { defaultValue: 'The' })}{' '}
-          <span className="bg-gradient-to-r from-oe-blue to-sky-500 bg-clip-text text-transparent">#1</span>{' '}
-          {t('login.hero_h_b', { defaultValue: 'open-source workspace for' })}
-          <br />
-          <span className="bg-gradient-to-r from-oe-blue to-sky-500 bg-clip-text text-transparent">
-            {t('login.hero_h_c', { defaultValue: 'construction project management' })}
-          </span>
-        </h2>
-
-        {/* Subhead */}
-        <p className="mt-5 text-[17px] text-content-secondary/70 leading-[1.65] tracking-[-0.008em] max-w-[420px] animate-stagger-in" style={{ animationDelay: '120ms' }}>
-          {t('login.hero_desc', { defaultValue: 'Plan, estimate, schedule, tender - every step of a project on one professional platform.' })}
-        </p>
-
-        {/* Stats row */}
-        <div className="mt-5 flex items-center gap-5 animate-stagger-in" style={{ animationDelay: '180ms' }}>
-          {[
-            { value: '120K+', label: t('login.stat_costs', { defaultValue: 'cost items' }) },
-            { value: String(SUPPORTED_LANGUAGES.length), label: t('login.stat_langs', { defaultValue: 'languages' }) },
-            { value: '47', label: t('login.stat_regions', { defaultValue: 'countries' }) },
-            { value: '6', label: t('login.stat_cad', { defaultValue: 'CAD formats' }) },
-            { value: '180+', label: t('login.stat_modules', { defaultValue: 'modules' }) },
-            { value: '28', label: t('login.stat_sections', { defaultValue: 'sections' }) },
-          ].map((s) => (
-            <div key={s.label} className="text-center">
-              <div className="text-[22px] font-semibold text-content-primary tracking-tight">{s.value}</div>
-              <div className="text-[11px] text-content-tertiary mt-0.5">{s.label}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Divider */}
-        <div className="mt-5 mb-4 h-px bg-gradient-to-r from-black/[0.06] via-black/[0.1] dark:from-white/10 dark:via-white/[0.14] to-transparent animate-stagger-in" style={{ animationDelay: '220ms' }} />
-
-        {/* Module honeycomb - proper pointy-top hex grid where every cell
-            shares an edge with its neighbours. Layout is intentionally
-            wider on the top/bottom rows (6 cells) than on the middle
-            row (5 cells) so it reads as a real, naturally-extending
-            honeycomb. Every cell is a real module - no decorative
-            placeholders. Math:
-              hex width   = 88px (left vertex to right vertex)
-              hex height  = 100px (top vertex to bottom vertex)
-              row stride  = 75px (3/4 of height - pointy-top step)
-              column step = 88px (one hex width on the same row)
-              alternating rows are offset by 44px (half a hex) - that's
-              what makes the slanted edges meet exactly. */}
-        <div className="relative mt-1 mr-auto h-[280px] w-[560px] max-w-full overflow-hidden animate-stagger-in" style={{ animationDelay: '260ms' }}>
-          {([
-            // Top row (y = -75) - 6 cells, offset by 44.
-            { x: -220, y: -76, icon: ShieldCheck,     label: t('login.mod.local',     { defaultValue: 'Local' }) },
-            { x: -132, y: -76, icon: Brain,           label: t('login.mod.ai',       { defaultValue: 'AI' }) },
-            { x:  -44, y: -76, icon: Ruler,           label: t('login.mod.takeoff',  { defaultValue: 'Takeoff' }) },
-            { x:   44, y: -76, icon: PenTool,         label: t('login.mod.cad',      { defaultValue: 'CAD' }) },
-            { x:  132, y: -76, icon: Box,             label: t('login.mod.bim',      { defaultValue: 'BIM' }) },
-            { x:  220, y: -76, icon: TrendingUp,      label: t('login.mod.cost5d',   { defaultValue: '5D' }) },
-            // Mid row (y = 0) - 5 cells aligned on the same axis.
-            { x: -176, y:  0,  icon: Database,        label: t('login.mod.costs',    { defaultValue: 'Costs' }) },
-            { x:  -88, y:  0,  icon: FileSpreadsheet, label: t('common.boq') },
-            { x:    0, y:  0,  icon: Layers,          label: t('login.mod.core',     { defaultValue: 'Workspace' }), accent: true },
-            { x:   88, y:  0,  icon: CalendarClock,   label: t('login.mod.schedule', { defaultValue: 'Schedule' }) },
-            { x:  176, y:  0,  icon: BarChart3,       label: t('login.mod.tender',   { defaultValue: 'Tendering' }) },
-            // Bottom row (y = 75) - 6 cells, offset by 44.
-            { x: -220, y:  76, icon: Zap,             label: t('login.mod.realtime', { defaultValue: 'Realtime' }) },
-            { x: -132, y:  76, icon: Boxes,           label: t('login.mod.resources',{ defaultValue: 'Resources' }) },
-            { x:  -44, y:  76, icon: ClipboardList,   label: t('login.mod.tasks',    { defaultValue: 'Tasks' }) },
-            { x:   44, y:  76, icon: FileCheck,       label: t('login.mod.validate', { defaultValue: 'Validate' }) },
-            { x:  132, y:  76, icon: FolderOpen,      label: t('login.mod.files',    { defaultValue: 'Files' }) },
-            { x:  220, y:  76, icon: Upload,          label: t('login.mod.exports',  { defaultValue: 'Exports' }) },
-          ] as const).map((cell, idx) => {
-            const isAccent = 'accent' in cell && cell.accent === true;
-            const Icon = cell.icon;
-            return (
-              // Outer wrapper handles ABSOLUTE POSITIONING only - its
-              // transform is the hex-grid offset and must never be
-              // overridden by an animation. Animations live on the inner
-              // cell so they don't fight with our positioning maths.
-              <div
-                key={idx}
-                className="absolute top-1/2 left-1/2"
-                style={{
-                  transform: `translate(calc(-50% + ${cell.x}px), calc(-50% + ${cell.y}px))`,
-                }}
-              >
-                <div
-                  className={`relative flex flex-col items-center justify-center w-[88px] animate-fade-in transition-transform duration-300 hover:scale-[1.05] ${
-                    isAccent ? 'text-white' : 'text-slate-900'
-                  }`}
-                  style={{
-                    animationDelay: `${280 + idx * 35}ms`,
-                    animationFillMode: 'both',
-                    // The height comes from the width, so the cell cannot
-                    // drift off the ratio the clip path is regular in.
-                    aspectRatio: HEX_PORTRAIT_ASPECT,
-                    clipPath: HEX_PORTRAIT_CLIP,
-                    background: isAccent
-                      ? 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 65%, #0369a1 100%)'
-                      : 'linear-gradient(180deg, rgba(255,255,255,0.97), rgba(244,250,255,0.82))',
-                    boxShadow: isAccent
-                      ? '0 18px 32px -12px rgba(14,165,233,0.55), inset 0 1px 0 rgba(255,255,255,0.35)'
-                      : '0 8px 18px -8px rgba(15,23,42,0.10), inset 0 1px 0 rgba(255,255,255,0.9), inset 0 0 0 1px rgba(14,165,233,0.06)',
-                  }}
-                >
-                  <Icon
-                    size={isAccent ? 22 : 18}
-                    strokeWidth={isAccent ? 2 : 1.65}
-                    className={isAccent ? '' : 'text-oe-blue'}
-                  />
-                  <span
-                    className={`mt-[5px] text-[10px] font-semibold tracking-[-0.01em] ${
-                      isAccent ? 'text-white/95' : 'text-slate-800'
-                    }`}
-                  >
-                    {cell.label}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Value props - restored as a clean two-up grid with refined
-            typography (no boxed icon backgrounds, accent rule above each
-            title) so the marketing column lands on something concrete
-            after the honeycomb. */}
-        <div className="mt-2 flex flex-wrap items-start gap-x-5 gap-y-2 animate-stagger-in" style={{ animationDelay: '320ms' }}>
-          {[
-            { icon: ShieldCheck, title: t('login.feat_local_title', { defaultValue: 'Your data, your machine' }), desc: t('login.feat_local', { defaultValue: 'Nothing leaves your computer. Full ownership,\nzero cloud dependency.' }) },
-            { icon: Brain,       title: t('login.feat_ai_title',    { defaultValue: 'AI-assisted, human-confirmed' }), desc: t('login.feat_ai',    { defaultValue: 'Smart suggestions with confidence scores. You always have the final say.' }) },
-          ].map((feat) => {
-            const Icon = feat.icon;
-            return (
-              <div key={feat.title} className="relative pl-4 max-w-[210px]">
-                <span aria-hidden className="absolute left-0 top-1 h-[14px] w-[2px] rounded-full bg-gradient-to-b from-oe-blue to-sky-500/60" />
-                <div className="flex items-center gap-1.5">
-                  <Icon size={13} strokeWidth={1.8} className="text-oe-blue/85" />
-                  <span className="text-[12.5px] font-semibold tracking-[-0.01em] text-content-primary leading-tight">
-                    {feat.title}
-                  </span>
-                </div>
-                <p className="mt-1 text-[11.5px] leading-[1.55] text-content-tertiary tracking-[-0.005em] whitespace-pre-line">
-                  {feat.desc}
-                </p>
-              </div>
-            );
-          })}
-        </div>
+        {/* Welcome panel - organization / client text from
+            BRAND.loginBanner in config/brand.ts. */}
+        <AuthBrandPanel />
 
         {/* Footer */}
         <div className="mt-4 space-y-1 animate-stagger-in" style={{ animationDelay: '380ms' }}>
@@ -818,20 +645,9 @@ export function LoginPage() {
             </p>
           </div>
 
-          {/* Open-source banner (mobile) */}
+          {/* Welcome card (mobile) - text from BRAND.loginBanner */}
           <div className="lg:hidden mb-4 animate-stagger-in" style={{ animationDelay: '100ms' }}>
-            <div className="rounded-xl bg-gradient-to-r from-oe-blue/10 via-violet-500/10 to-emerald-500/10 border border-oe-blue/20 px-4 py-3 text-center">
-              <div className="flex items-center justify-center gap-1.5 mb-1">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                </span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Open Source</span>
-              </div>
-              <p className="text-sm font-bold bg-gradient-to-r from-oe-blue via-violet-600 to-emerald-600 bg-clip-text text-transparent">
-                {t('login.open_source_badge', { defaultValue: 'The #1 Open-Source Construction ERP' })}
-              </p>
-            </div>
+            <AuthBrandPanel variant="card" />
           </div>
 
           {/* Form - premium multi-layer glass.
