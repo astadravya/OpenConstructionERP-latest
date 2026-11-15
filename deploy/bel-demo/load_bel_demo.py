@@ -246,7 +246,7 @@ def main() -> None:
              data={"project_id": pid}, files={"file": (SCHEDULE_FILE.name, content, mime)})
     sched = api.call("POST", "/schedule/schedule/import/spreadsheet/commit/",
                      data={"project_id": pid, "expected_sha256": sha, "target": "new",
-                           "name": "Baseline programme (JV 15-month plan, contract milestones)", "date_order": "dmy"},
+                           "name": "Baseline programme Rev 0", "date_order": "dmy"},
                      files={"file": (SCHEDULE_FILE.name, content, mime)})
     step(f"Imported baseline schedule ({sched.get('activities_created', sched.get('activity_count', 'ok'))} activities)")
 
