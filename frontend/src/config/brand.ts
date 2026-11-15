@@ -19,12 +19,37 @@
  * place where your users can download the source of the version you run.
  */
 
+/** One short point in the sign-in page welcome panel. */
+export interface LoginHighlight { title: string; text: string }
+
+/**
+ * Welcome panel beside the sign-in and sign-up forms. Plain text, not
+ * translated, so each client build can say exactly what that client wants.
+ */
+export interface LoginBannerConfig {
+  /** Small pill above the headline. Empty = hidden. */
+  eyebrow: string;
+  /** Headline, first part (plain colour). */
+  headline: string;
+  /** Headline, second part (brand accent colour). Empty = hidden. */
+  headlineAccent: string;
+  /** One or two sentences under the headline. Empty = hidden. */
+  description: string;
+  /** Up to four short points. Empty list = hidden. */
+  highlights: LoginHighlight[];
+  /** Heading of the contact box. Contact box is hidden when it has no lines. */
+  contactTitle: string;
+  /** Lines of the contact box (address, phone, email, website...). */
+  contactLines: string[];
+}
+
 export interface BrandConfig {
   name: string; shortName: string; organization: string; tagline: string;
   logo: string; logoDark: string; icon: string;
   primaryColor: string; secondaryColor: string;
   website: string; email: string; phone: string; address: string;
   docsUrl: string; privacyUrl: string; termsUrl: string; showUpstreamCommunity: boolean; sourceCodeUrl: string;
+  loginBanner: LoginBannerConfig;
 }
 
 export const BRAND: Readonly<BrandConfig> = {
@@ -77,6 +102,34 @@ export const BRAND: Readonly<BrandConfig> = {
 
   /** Where users can get the source code of this deployment (AGPL s.13). */
   sourceCodeUrl: 'https://github.com/astadravya/OpenConstructionERP-latest',
+
+  /**
+   * Welcome panel on the sign-in page (right side on wide screens, a short
+   * card above the form on phones) and the sign-up page.
+   *
+   * PLACEHOLDER TEXT: replace the [square-bracket] parts with the
+   * organization's or client's own wording. Each client branch keeps its
+   * own copy of these values. Leave a field empty ('' or []) to hide it.
+   */
+  loginBanner: {
+    eyebrow: 'SatyaDeva BuildTech',
+    headline: 'Welcome to',
+    headlineAccent: '[Organization / client name]',
+    description:
+      '[One or two lines about the organization or client: who you are, what this workspace is used for, and which projects it covers.]',
+    highlights: [
+      { title: '[Highlight 1]', text: '[Short line about a key service, project or strength.]' },
+      { title: '[Highlight 2]', text: '[Short line about a key service, project or strength.]' },
+      { title: '[Highlight 3]', text: '[Short line about a key service, project or strength.]' },
+    ],
+    contactTitle: 'Contact',
+    contactLines: [
+      '[Office address, City, State, PIN]',
+      '[Phone number]',
+      '[Email address]',
+      '[Website]',
+    ],
+  },
 };
 
 /**
