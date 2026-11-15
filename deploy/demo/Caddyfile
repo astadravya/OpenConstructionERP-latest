@@ -1,0 +1,8 @@
+# Caddy gets and renews a free Let's Encrypt certificate for DEMO_DOMAIN by
+# itself, and redirects http:// to https://. WebSockets and large uploads pass
+# straight through; the nginx container behind it carries the app's own rules
+# (upload size, .mjs workers, WebSocket routes).
+{$DEMO_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy frontend:80
+}

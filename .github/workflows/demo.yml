@@ -1,0 +1,94 @@
+# Start or stop the throwaway demo server on DigitalOcean (Bengaluru).
+#
+# Actions tab > "Demo server" > Run workflow > choose start or stop.
+# A start creates a droplet, attaches the persistent data volume and deploys
+# the latest images; a stop backs up the database onto the volume and
+# destroys the droplet so it stops costing money. An hourly check also stops
+# a demo that has been left running longer than DEMO_MAX_HOURS (default 8).
+#
+# Needs, in Settings > Secrets and variables > Actions (see deploy/demo/README.md):
+#   Secrets:   DO_TOKEN    DigitalOcean API token (read + write)
+#              DO_SSH_KEY  private SSH key the workflows use to reach the droplet
+#   Variables (all optional): DEMO_DOMAIN, DEMO_MAX_HOURS, DO_REGION
+
+name: Demo server
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Start or stop the demo
+        type: choice
+        options: [start, stop]
+        default: start
+      size:
+        description: Server size (start only)
+        type: choice
+        options:
+          - s-2vcpu-4gb   # about $0.036 an hour
+          - s-4vcpu-8gb   # about $0.071 an hour, for heavier demos
+        default: s-2vcpu-4gb
+  schedule:
+    - cron: "17 * * * *"
+
+concurrency:
+  group: demo-server
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DO_REGION: ${{ vars.DO_REGION || 'blr1' }}
+      DO_SIZE: ${{ inputs.size || 's-2vcpu-4gb' }}
+      DEMO_DOMAIN: ${{ vars.DEMO_DOMAIN }}
+      MAX_HOURS: ${{ vars.DEMO_MAX_HOURS || '8' }}
+      IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/opencon
+      IMAGE_TAG: latest
+      GHCR_USER: ${{ github.actor }}
+      GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      DO_TOKEN: ${{ secrets.DO_TOKEN }}
+      DO_SSH_KEY: ${{ secrets.DO_SSH_KEY }}
+    steps:
+      - name: Check setup
+        id: setup
+        run: |
+          if [ -z "$DO_TOKEN" ] || [ -z "$DO_SSH_KEY" ]; then
+            if [ "${{ github.event_name }}" = "schedule" ]; then
+              echo "ready=false" >> "$GITHUB_OUTPUT"; exit 0
+            fi
+            echo "::error::Add the DO_TOKEN and DO_SSH_KEY secrets first (see deploy/demo/README.md)"; exit 1
+          fi
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
+      - if: steps.setup.outputs.ready == 'true'
+        uses: actions/checkout@v4
+
+      - if: steps.setup.outputs.ready == 'true'
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DO_TOKEN }}
+
+      - name: Load SSH key
+        if: steps.setup.outputs.ready == 'true'
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DO_SSH_KEY" | tr -d '\r' > ~/.ssh/demo
+          chmod 600 ~/.ssh/demo
+
+      - name: Start demo
+        if: steps.setup.outputs.ready == 'true' && github.event_name == 'workflow_dispatch' && inputs.action == 'start'
+        run: bash deploy/demo/do-demo.sh up
+
+      - name: Stop demo
+        if: steps.setup.outputs.ready == 'true' && github.event_name == 'workflow_dispatch' && inputs.action == 'stop'
+        run: bash deploy/demo/do-demo.sh down
+
+      - name: Stop a demo left running too long
+        if: steps.setup.outputs.ready == 'true' && github.event_name == 'schedule'
+        run: bash deploy/demo/do-demo.sh autostop
