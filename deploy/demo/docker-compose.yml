@@ -1,10 +1,10 @@
-# SatyaDeva BuildTech demo stack for one small ARM64 server
-# (Oracle Cloud Always Free, Ampere A1, Ubuntu).
+# SatyaDeva BuildTech demo stack for one throwaway DigitalOcean droplet.
 #
-# The images are built by .github/workflows/deploy-demo.yml on a GitHub ARM
-# runner and pulled here, so the server never runs the memory-hungry frontend
-# build itself. Secrets live in .env next to this file, which bootstrap.sh
-# creates once on the server. Nothing secret is stored in the repository.
+# The images are built by .github/workflows/demo-build.yml and pulled here, so
+# the droplet never runs the memory-hungry frontend build. Docker keeps all its
+# data (database, uploads, HTTPS certificates) on a small block
+# storage volume that survives when the droplet is destroyed, and .env with the
+# server-side secrets lives on that volume too. See README.md.
 #
 #   Browser --443--> caddy (free Let's Encrypt HTTPS)
 #                      --> frontend (nginx: React app, proxies /api)
