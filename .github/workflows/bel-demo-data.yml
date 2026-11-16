@@ -1,0 +1,84 @@
+# Load the BEL Palasamudram demo set-up into the running BEL server.
+#
+# Actions tab > "Load BEL demo data" > Run workflow.
+#
+# Start the BEL server first ("Start or stop a server", server: bel, action:
+# start). This workflow then finds that server, logs in as the admin (or
+# creates the admin account if the server is brand new) and loads:
+# the project, 9 dummy users, the agreement BOQ, the baseline schedule,
+# contract milestones, India settings and sample site records.
+# See deploy/bel-demo/README.md.
+#
+# Needs, in Settings > Secrets and variables > Actions:
+#   Secrets: DO_TOKEN (already there), BEL_ADMIN_EMAIL, BEL_ADMIN_PASSWORD,
+#            BEL_DATA_KEY (unlocks the client's BOQ and programme, which are
+#            stored encrypted because this repository is public)
+
+name: Load BEL demo data
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: server-client/bel
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BEL_ADMIN_EMAIL: ${{ secrets.BEL_ADMIN_EMAIL }}
+      BEL_ADMIN_PASSWORD: ${{ secrets.BEL_ADMIN_PASSWORD }}
+      BEL_DATA_KEY: ${{ secrets.BEL_DATA_KEY }}
+      DO_TOKEN: ${{ secrets.DO_TOKEN }}
+    steps:
+      - name: Check setup
+        run: |
+          if [ -z "$DO_TOKEN" ] || [ -z "$BEL_ADMIN_EMAIL" ] || [ -z "$BEL_ADMIN_PASSWORD" ] || [ -z "$BEL_DATA_KEY" ]; then
+            echo "::error::Add the BEL_ADMIN_EMAIL, BEL_ADMIN_PASSWORD and BEL_DATA_KEY secrets first (see deploy/bel-demo/README.md)"; exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          ref: client/bel
+
+      - uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DO_TOKEN }}
+
+      - name: Find the BEL server
+        id: server
+        run: |
+          IP="$(doctl compute droplet list --tag-name opencon-bel --format PublicIPv4 --no-header | head -1 | tr -d ' ')"
+          if [ -z "$IP" ]; then
+            echo "::error::The BEL server is not running. Run 'Start or stop a server' with server: bel, action: start, then try again."; exit 1
+          fi
+          echo "url=https://$(echo "$IP" | tr . -).sslip.io" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Unlock the client data
+        run: |
+          mkdir -p "$RUNNER_TEMP/bel-data"
+          printf '%s' "$BEL_DATA_KEY" > "$RUNNER_TEMP/bel.key"
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 \
+            -in deploy/bel-demo/bel-demo-data.tar.gz.enc -pass "file:$RUNNER_TEMP/bel.key" \
+            | tar xz -C "$RUNNER_TEMP/bel-data"
+          rm -f "$RUNNER_TEMP/bel.key"
+
+      - name: Load the demo data
+        run: |
+          pip install --quiet "httpx>=0.27,<1"
+          python deploy/bel-demo/load_bel_demo.py \
+            --url "${{ steps.server.outputs.url }}" --data "$RUNNER_TEMP/bel-data" \
+            --email "$BEL_ADMIN_EMAIL" --password "$BEL_ADMIN_PASSWORD" | tee load.log
+          {
+            echo "### BEL demo data loaded"
+            echo '```'; cat load.log; echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
